@@ -1,7 +1,24 @@
 import * as React from "react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "@/lib/supabaseClient"
-import { resolveNextRoute } from "@/lib/goToAppOrOnboarding"
+
+async function resolveNextRoute(): Promise<string> {
+  const { data } = await supabase.auth.getSession()
+  if (!data.session) return "/"
+
+  const userId = data.session.user.id
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("profile_completed, username, display_name")
+    .eq("id", userId)
+    .maybeSingle()
+
+  const completed =
+    !!profile?.profile_completed ||
+    (!!profile?.username && !!profile?.display_name)
+
+  return completed ? "/app/today" : "/onboarding/profile"
+}
 
 export default function AuthCallback() {
   const [msg, setMsg] = React.useState("Finishing sign in...")
@@ -11,8 +28,10 @@ export default function AuthCallback() {
     let cancelled = false
 
     async function run() {
-      // 1) primer intento
-      let { data, error } = await supabase.auth.getSession()
+      // Give Supabase a moment to parse hash/code and persist session
+      await new Promise((r) => setTimeout(r, 150))
+
+      const { data, error } = await supabase.auth.getSession()
       if (cancelled) return
 
       if (error) {
@@ -20,20 +39,15 @@ export default function AuthCallback() {
         return
       }
 
-      // 2) si no hay sesión, reintento corto (edge común)
       if (!data.session) {
+        // Retry once (common on slow loads)
         await new Promise((r) => setTimeout(r, 250))
-        ;({ data, error } = await supabase.auth.getSession())
+        const retry = await supabase.auth.getSession()
         if (cancelled) return
-        if (error) {
-          setMsg(error.message)
+        if (!retry.data.session) {
+          setMsg("No session found. Please try again.")
           return
         }
-      }
-
-      if (!data.session) {
-        setMsg("No session found. Please try again.")
-        return
       }
 
       const next = await resolveNextRoute()
