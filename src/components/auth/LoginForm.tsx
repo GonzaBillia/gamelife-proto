@@ -57,9 +57,8 @@ export function LoginForm({
     setLoading(true)
 
     try {
-      const redirectTo = `${getSiteUrl()}/auth/callback`
-
-      const { error } = await supabase.auth.signInWithOAuth({
+      const redirectTo = `${window.location.origin}/auth/callback`
+      await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo },
       })

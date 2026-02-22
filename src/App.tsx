@@ -11,7 +11,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/auth" element={<LoginPage />} />
+        <Route path="/" element={<LoginPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
 

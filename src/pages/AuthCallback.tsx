@@ -28,31 +28,39 @@ export default function AuthCallback() {
     let cancelled = false
 
     async function run() {
-      // Give Supabase a moment to parse hash/code and persist session
-      await new Promise((r) => setTimeout(r, 150))
+      try {
+        const url = new URL(window.location.href)
+        const code = url.searchParams.get("code")
+        const hasAccessTokenInHash = window.location.hash.includes("access_token=")
 
-      const { data, error } = await supabase.auth.getSession()
-      if (cancelled) return
+        // ✅ PKCE: si viene ?code=..., intercambiamos por sesión
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code)
+          if (error) throw error
+        }
 
-      if (error) {
-        setMsg(error.message)
-        return
-      }
+        // ✅ Implicit: si viene #access_token=..., detectSessionInUrl debería capturarlo
+        // Le damos un micro delay por si el SDK tarda en persistir
+        if (hasAccessTokenInHash) {
+          await new Promise((r) => setTimeout(r, 150))
+        }
 
-      if (!data.session) {
-        // Retry once (common on slow loads)
-        await new Promise((r) => setTimeout(r, 250))
-        const retry = await supabase.auth.getSession()
+        const { data, error } = await supabase.auth.getSession()
         if (cancelled) return
-        if (!retry.data.session) {
+        if (error) throw error
+
+        if (!data.session) {
           setMsg("No session found. Please try again.")
           return
         }
-      }
 
-      const next = await resolveNextRoute()
-      setMsg("Signed in! Redirecting...")
-      navigate(next, { replace: true })
+        const next = await resolveNextRoute()
+        setMsg("Signed in! Redirecting...")
+        navigate(next, { replace: true })
+      } catch (e) {
+        if (cancelled) return
+        setMsg((e as Error).message)
+      }
     }
 
     run()
