@@ -1,23 +1,29 @@
-import { BrowserRouter, Link, Route, Routes, Navigate } from 'react-router-dom'
-import { ThemeProvider } from './components/providers/theme-provider'
-import Page from './pages/AuthPage'
-import AuthCallback from './pages/AuthCallback'
+// src/App.tsx
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import LoginPage from "@/pages/AuthPage"
+import SignUpPage from "@/pages/SignUpPage"
+import AuthCallback from "@/pages/AuthCallback"
+import AppLayout from "@/pages/app/AppLayout"
+import TodayPage from "@/pages/app/TodayPage"
+import OnboardingProfilePage from "@/pages/OnboardingProfilePage"
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <BrowserRouter>
-        <nav style={{ display: 'flex', gap: 12, padding: 12 }}>
-          <Link to="/auth">Auth</Link>
-          <Link to="/tasks">Tasks</Link>
-        </nav>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/sign-up" element={<SignUpPage />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
-        <Routes>
-          <Route path="/auth" element={<Page />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="*" element={<Navigate to="/auth" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </ThemeProvider>
+        {/* onboarding */}
+        <Route path="/onboarding/profile" element={<OnboardingProfilePage />} />
+
+        {/* app */}
+        <Route path="/app" element={<AppLayout />}>
+          <Route index element={<Navigate to="/app/today" replace />} />
+          <Route path="today" element={<TodayPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   )
 }

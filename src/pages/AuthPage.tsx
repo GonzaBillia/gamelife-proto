@@ -1,10 +1,13 @@
 import { LoginForm } from "@/components/auth/LoginForm"
+import { AuthGate } from "@/components/auth/AuthGate"
 
-export default function Page() {
+export default function LoginPage() {
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
-        <LoginForm />
+        <AuthGate>
+          <LoginForm />
+        </AuthGate>
       </div>
     </div>
   )

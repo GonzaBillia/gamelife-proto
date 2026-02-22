@@ -17,6 +17,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabaseClient"
 import { getSiteUrl } from "@/lib/authRedirect"
+import { Link, useNavigate } from "react-router-dom"
+import { resolveNextRoute } from "@/lib/goToAppOrOnboarding"
 
 export function LoginForm({
   className,
@@ -28,6 +30,8 @@ export function LoginForm({
   const [error, setError] = React.useState<string | null>(null)
   const [info, setInfo] = React.useState<string | null>(null)
 
+  const navigate = useNavigate()
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
@@ -35,14 +39,11 @@ export function LoginForm({
     setLoading(true)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
 
-      // Si usás react-router, podés navegar acá (ver sección 4)
-      setInfo("Logged in!")
+      const next = await resolveNextRoute()
+      navigate(next, { replace: true })
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -60,13 +61,12 @@ export function LoginForm({
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo,
-        },
+        options: { redirectTo },
       })
       if (error) throw error
 
-      // Si OAuth redirige, esto casi nunca se ejecuta.
+      // Normal: acá NO continúa, porque redirige.
+      setInfo("Redirecting...")
     } catch (err) {
       setError((err as Error).message)
       setLoading(false)
@@ -177,9 +177,9 @@ export function LoginForm({
                 ) : (
                   <FieldDescription className="text-center">
                     Don&apos;t have an account?{" "}
-                    <a href="/sign-up" className="underline underline-offset-4">
-                      Sign up
-                    </a>
+                    <Link to="/sign-up" className="underline underline-offset-4">
+                    Sign up
+                  </Link>
                   </FieldDescription>
                 )}
               </Field>
